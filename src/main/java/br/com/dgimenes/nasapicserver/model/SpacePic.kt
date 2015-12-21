@@ -23,6 +23,23 @@ class SpacePic {
         this.source = source
     }
 
+    constructor(description: String?, hdImageUrl: String?, previewImageUrl: String?, originalApiUrl: String,
+                originalApiImageUrl: String, title: String, createdAt: Date, publishedAt: Date?, updatedAt: Date?,
+                deletedAt: Date?, status: SpacePicStatus, source: SpacePicSource) {
+        this.description = description
+        this.hdImageUrl = hdImageUrl
+        this.previewImageUrl = previewImageUrl
+        this.originalApiUrl = originalApiUrl
+        this.originalApiImageUrl = originalApiImageUrl
+        this.title = title
+        this.createdAt = createdAt
+        this.publishedAt = publishedAt
+        this.updatedAt = updatedAt
+        this.deletedAt = deletedAt
+        this.status = status
+        this.source = source
+    }
+
     @Id
     @SequenceGenerator(name = "space_pic_id_seq", sequenceName = "space_pic_id_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "space_pic_id_seq")
