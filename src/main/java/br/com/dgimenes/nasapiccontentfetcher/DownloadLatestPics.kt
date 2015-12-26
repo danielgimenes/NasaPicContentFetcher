@@ -44,12 +44,13 @@ class DownloadLatestPics {
         val spacePicsToPublish = getSpacePicsToPublish()
         println("Pics to publish = ${spacePicsToPublish.size}")
         println("Preparing and publishing SpacePics...")
-        spacePicsToPublish.forEach { prepareSpacePicForPublishing(it) }
-        spacePicsToPublish.forEach { persistNewSpacePic(it) }
+        spacePicsToPublish.map { prepareSpacePicForPublishing(it) }
+                .filterNotNull()
+                .forEach { persistNewSpacePic(it) }
         println("All done! Bye")
     }
 
-    private fun prepareSpacePicForPublishing(spacePic: SpacePic) {
+    private fun prepareSpacePicForPublishing(spacePic: SpacePic) : SpacePic {
         spacePic.status = SpacePicStatus.PUBLISHED
         spacePic.publishedAt = DateTime().toDate()
 
@@ -57,6 +58,8 @@ class DownloadLatestPics {
         spacePic.hdImageUrl = spacePic.originalApiImageUrl
         // TODO create a preview version of the cloudinary image and set it as the SpacePic's preview image
         spacePic.previewImageUrl = spacePic.originalApiImageUrl
+
+        return spacePic
     }
 
     private fun getSpacePicsToPublish(): List<SpacePic> {
