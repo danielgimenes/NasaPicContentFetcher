@@ -13,10 +13,11 @@ class SpacePic {
 
     constructor()
 
-    constructor(originalApiUrl: String, originalApiImageUrl: String, title: String, createdAt: Date,
-                status: SpacePicStatus, source: SpacePicSource) {
+    constructor(originalApiUrl: String, originalApiImageUrl: String, originallyPublishedAt: Date, title: String,
+                createdAt: Date, status: SpacePicStatus, source: SpacePicSource) {
         this.originalApiUrl = originalApiUrl
         this.originalApiImageUrl = originalApiImageUrl
+        this.originallyPublishedAt = originallyPublishedAt
         this.title = title
         this.createdAt = createdAt
         this.status = status
@@ -24,13 +25,15 @@ class SpacePic {
     }
 
     constructor(description: String?, hdImageUrl: String?, previewImageUrl: String?, originalApiUrl: String,
-                originalApiImageUrl: String, title: String, createdAt: Date, publishedAt: Date?, updatedAt: Date?,
-                deletedAt: Date?, status: SpacePicStatus, source: SpacePicSource) {
+                originalApiImageUrl: String, originallyPublishedAt: Date, title: String, createdAt: Date,
+                publishedAt: Date?, updatedAt: Date?, deletedAt: Date?, status: SpacePicStatus,
+                source: SpacePicSource) {
         this.description = description
         this.hdImageUrl = hdImageUrl
         this.previewImageUrl = previewImageUrl
         this.originalApiUrl = originalApiUrl
         this.originalApiImageUrl = originalApiImageUrl
+        this.originallyPublishedAt = originallyPublishedAt
         this.title = title
         this.createdAt = createdAt
         this.publishedAt = publishedAt
@@ -57,6 +60,10 @@ class SpacePic {
 
     @Column(nullable = false, length = 768)
     var originalApiImageUrl: String? = null
+
+    @Column(nullable = true)
+    @Temporal(TemporalType.TIMESTAMP)
+    var originallyPublishedAt: Date? = null
 
     @Column(nullable = false, length = 256)
     var title: String? = null
