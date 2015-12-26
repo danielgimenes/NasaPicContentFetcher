@@ -7,15 +7,14 @@ import br.com.dgimenes.nasapicserver.model.SpacePicSource
 import br.com.dgimenes.nasapicserver.model.SpacePicStatus
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
-import java.util.*
 import javax.persistence.Persistence
 
 fun main(args: Array<String>) {
     try {
-        if (args.size > 0 && args[1] == "test-data")
+        if (args.size > 0 && args[0] == "test-data")
             DownloadLatestPics().insertTestData()
-        else if (args.size > 1 && args[1] == "check-interval")
-            DownloadLatestPics().start(args[2].toInt())
+        else if (args.size > 1 && args[0] == "check-interval")
+            DownloadLatestPics().start(args[1].toInt())
         else
             DownloadLatestPics().start()
         DownloadLatestPics().close()
