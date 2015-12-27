@@ -15,17 +15,17 @@ import javax.persistence.Persistence
 
 fun main(args: Array<String>) {
     try {
+        val program = DownloadLatestPics()
         if (args.size > 0 && args[0] == "test-data")
-            DownloadLatestPics().insertTestData()
+            program.insertTestData()
         else if (args.size > 1 && args[0] == "check-interval")
-            DownloadLatestPics().start(args[1].toInt())
-        else
-            DownloadLatestPics().start()
-        DownloadLatestPics().close()
+            program.start(args[1].toInt())
+        else {
+            program.start()
+        }
+        program.close()
     } catch(e: Exception) {
         e.printStackTrace()
-    } finally {
-        System.exit(0)
     }
 }
 
@@ -247,7 +247,7 @@ class DownloadLatestPics {
 
     fun close() {
         if (em.isOpen()) {
-            em.close()
+            em.entityManagerFactory.close()
         }
     }
 }

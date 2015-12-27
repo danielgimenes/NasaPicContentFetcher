@@ -111,7 +111,7 @@
     <properties>
         <kotlin.version>1.0.0-beta-3595</kotlin.version>
         <dropwizard.version>0.9.1</dropwizard.version>
-        <mainclass>br.com.dgimenes.nasapicserver.core.LauncherKt</mainclass>
+        <mainclass>br.com.dgimenes.nasapiccontentfetcher.DownloadLatestPicsKt</mainclass>
     </properties>
 
     <dependencies>
