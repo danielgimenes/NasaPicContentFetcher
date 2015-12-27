@@ -5,8 +5,12 @@ import br.com.dgimenes.nasapiccontentfetcher.service.api.RetrofitFactory
 import br.com.dgimenes.nasapicserver.model.SpacePic
 import br.com.dgimenes.nasapicserver.model.SpacePicSource
 import br.com.dgimenes.nasapicserver.model.SpacePicStatus
+import com.cloudinary.Cloudinary
+import com.cloudinary.Transformation
+import com.cloudinary.utils.ObjectUtils
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import java.util.*
 import javax.persistence.Persistence
 
 fun main(args: Array<String>) {
@@ -30,9 +34,15 @@ class DownloadLatestPics {
     var em = Persistence.createEntityManagerFactory("primary_pu_dev").createEntityManager()
     val DATE_FORMAT = "yyyy-MM-dd"
     val APOD_BASE_URL = "https://api.nasa.gov"
-    val APOD_API_KEY = "biwbr55t29bUSURh2hMbkccNkpvRoNyVi8XBHxm1" // TODO hide this
+    val CONFIG_FILE_NAME = "nasapiccontentfetcher.config"
+    var APOD_API_KEY : String? = null
+    var CLOUDINARY_CLOUD_NAME : String? = null
+    var CLOUDINARY_API_KEY : String? = null
+    var CLOUDINARY_API_SECRET : String? = null
+    var cloudinary : Cloudinary? = null
 
     fun start(checkInterval : Int? = null) {
+        loadConfigurations()
         println("Fetching pictures metadata...")
         val spacePics =
                 if (checkInterval != null) downloadLatestAPODsMetadata(checkInterval) else downloadLatestAPODsMetadata()
@@ -43,23 +53,58 @@ class DownloadLatestPics {
         println("Checking SpacePics not published yet...")
         val spacePicsToPublish = getSpacePicsToPublish()
         println("Pics to publish = ${spacePicsToPublish.size}")
-        println("Preparing and publishing SpacePics...")
-        spacePicsToPublish.map { prepareSpacePicForPublishing(it) }
-                .filterNotNull()
-                .forEach { persistNewSpacePic(it) }
+
+        if (spacePicsToPublish.size > 0) {
+            setupCloudinary()
+            println("Preparing and publishing SpacePics...")
+            spacePicsToPublish.map { prepareSpacePicForPublishing(it) }
+                    .filterNotNull()
+                    .forEach { persistNewSpacePic(it) }
+        }
         println("All done! Bye")
     }
 
-    private fun prepareSpacePicForPublishing(spacePic: SpacePic) : SpacePic {
+    private fun loadConfigurations() {
+        val inputStream = this.javaClass.classLoader.getResourceAsStream(CONFIG_FILE_NAME)
+        inputStream ?: throw RuntimeException("Configurations file $CONFIG_FILE_NAME not found!")
+        val properties = Properties()
+        properties.load(inputStream)
+        APOD_API_KEY = properties.get("apod-api-key") as String?
+        CLOUDINARY_CLOUD_NAME = properties.get("cloudinary-cloud-name") as String?
+        CLOUDINARY_API_KEY = properties.get("cloudinary-api-key") as String?
+        CLOUDINARY_API_SECRET = properties.get("cloudinary-api-secret") as String?
+        if (APOD_API_KEY == null || CLOUDINARY_CLOUD_NAME == null || CLOUDINARY_API_KEY == null
+                || CLOUDINARY_API_SECRET == null) {
+            throw RuntimeException("Invalid configurations!")
+        }
+    }
+
+    private fun setupCloudinary() {
+        val config = HashMap<String, String>()
+        config.put("cloud_name", CLOUDINARY_CLOUD_NAME!!)
+        config.put("api_key", CLOUDINARY_API_KEY!!)
+        config.put("api_secret", CLOUDINARY_API_SECRET!!)
+        cloudinary = Cloudinary(config);
+    }
+
+    private fun prepareSpacePicForPublishing(spacePic: SpacePic) : SpacePic? {
+        println("preparing SpacePic ${DateTime(spacePic.originallyPublishedAt).toString(DATE_FORMAT)}...")
         spacePic.status = SpacePicStatus.PUBLISHED
         spacePic.publishedAt = DateTime().toDate()
 
-        // TODO upload original pic to cloudinary and set it as the HD version of the SpacePic
-        spacePic.hdImageUrl = spacePic.originalApiImageUrl
-        // TODO create a preview version of the cloudinary image and set it as the SpacePic's preview image
-        spacePic.previewImageUrl = spacePic.originalApiImageUrl
-
-        return spacePic
+        try {
+            val uploadResult = cloudinary?.uploader()?.upload(
+                    spacePic.originalApiImageUrl, ObjectUtils.emptyMap()) ?: return null
+            spacePic.hdImageUrl = uploadResult.get("url") as String
+            val resizedUrl = cloudinary?.url()?.transformation(
+                    Transformation().width(320).height(320).crop("fill")
+                )?.generate(uploadResult.get("public_id") as String) ?: return null
+            spacePic.previewImageUrl = resizedUrl
+            return spacePic
+        } catch (e : Exception) {
+            e.printStackTrace()
+            return null
+        }
     }
 
     private fun getSpacePicsToPublish(): List<SpacePic> {

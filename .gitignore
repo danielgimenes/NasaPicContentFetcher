@@ -1,3 +1,5 @@
+src/main/resources/nasapiccontentfetcher.config
+
 *.class
 
 # Mobile Tools for Java (J2ME)
