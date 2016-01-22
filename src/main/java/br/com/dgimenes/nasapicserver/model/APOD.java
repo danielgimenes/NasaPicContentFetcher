@@ -6,6 +6,7 @@ import java.util.List;
 
 public class APOD {
 
+    @SerializedName("hdurl")
     private String url;
 
     @SerializedName("media_type")
@@ -13,15 +14,12 @@ public class APOD {
 
     private String explanation;
 
-    private List<String> concepts;
-
     private String title;
 
     public APOD(String url, String mediaType, String explanation, List<String> concepts, String title) {
         this.url = url;
         this.mediaType = mediaType;
         this.explanation = explanation;
-        this.concepts = concepts;
         this.title = title;
     }
 
@@ -35,10 +33,6 @@ public class APOD {
 
     public String getExplanation() {
         return explanation;
-    }
-
-    public List<String> getConcepts() {
-        return concepts;
     }
 
     public String getTitle() {

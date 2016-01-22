@@ -10,6 +10,7 @@ import com.cloudinary.Transformation
 import com.cloudinary.utils.ObjectUtils
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import java.text.SimpleDateFormat
 import java.util.*
 import javax.persistence.Persistence
 
@@ -19,13 +20,17 @@ fun main(args: Array<String>) {
         if (args.size > 0 && args[0] == "test-data")
             program.insertTestData()
         else if (args.size > 1 && args[0] == "check-interval")
-            program.start(args[1].toInt())
+            program.downloadLatest(args[1].toInt())
+        else if (args.size > 1 && args[0] == "set-best")
+            program.downloadAndSetBest(args[1].toString())
         else {
-            program.start()
+            program.downloadLatest()
         }
         program.close()
     } catch(e: Exception) {
         e.printStackTrace()
+    } finally {
+        Thread.sleep(2000)
     }
 }
 
@@ -41,7 +46,7 @@ class DownloadLatestPics {
     var CLOUDINARY_API_SECRET : String? = null
     var cloudinary : Cloudinary? = null
 
-    fun start(checkInterval : Int? = null) {
+    fun downloadLatest(checkInterval : Int? = null) {
         loadConfigurations()
         println("Fetching pictures metadata...")
         val spacePics =
@@ -61,6 +66,19 @@ class DownloadLatestPics {
                     .filterNotNull()
                     .forEach { persistNewSpacePic(it) }
         }
+        println("All done! Bye")
+    }
+
+    fun downloadAndSetBest(dateStr: String) {
+        loadConfigurations()
+        println("Fetching picture metadata...")
+        SimpleDateFormat(DATE_FORMAT).parse(dateStr).toString() // just validating
+        val spacePic = downloadAPODMetadata(dateStr)
+                ?: throw RuntimeException("APOD could not be downloaded")
+        spacePic.best = true
+        println("Preparing and publishing SpacePic...")
+        prepareSpacePicForPublishing(spacePic)
+        persistNewSpacePic(spacePic)
         println("All done! Bye")
     }
 
