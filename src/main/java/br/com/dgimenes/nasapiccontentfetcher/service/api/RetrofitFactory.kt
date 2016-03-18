@@ -13,7 +13,7 @@ object RetrofitFactory {
 
     private fun createOKHttpClient() : OkHttpClient {
         val okHttpClient = OkHttpClient();
-        okHttpClient.setCache(createHttpClientCache());
+        okHttpClient.cache = createHttpClientCache();
         return okHttpClient;
     }
 
@@ -22,7 +22,7 @@ object RetrofitFactory {
                 *arrayOf<FileAttribute<String>>()).toFile(), HTTP_CACHE_SIZE_IN_BYTES);
     }
 
-    public fun get(apiBaseUrl : String) : Retrofit {
+    fun get(apiBaseUrl : String) : Retrofit {
         if (retrofit == null) {
             retrofit = Retrofit.Builder()
                     .baseUrl(apiBaseUrl)

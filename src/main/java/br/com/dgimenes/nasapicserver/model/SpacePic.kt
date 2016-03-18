@@ -13,8 +13,8 @@ class SpacePic {
 
     constructor()
 
-    constructor(originalApiUrl: String, originalApiImageUrl: String, originallyPublishedAt: Date, title: String,
-                createdAt: Date, status: SpacePicStatus, source: SpacePicSource) {
+    constructor(originalApiUrl: String, originalApiImageUrl: String, originallyPublishedAt: Date,
+                title: String, createdAt: Date, status: SpacePicStatus, source: SpacePicSource) {
         this.originalApiUrl = originalApiUrl
         this.originalApiImageUrl = originalApiImageUrl
         this.originallyPublishedAt = originallyPublishedAt
@@ -24,10 +24,10 @@ class SpacePic {
         this.source = source
     }
 
-    constructor(description: String?, hdImageUrl: String?, previewImageUrl: String?, originalApiUrl: String,
-                originalApiImageUrl: String, originallyPublishedAt: Date, title: String, createdAt: Date,
-                publishedAt: Date?, updatedAt: Date?, deletedAt: Date?, status: SpacePicStatus,
-                source: SpacePicSource) {
+    constructor(description: String?, hdImageUrl: String?, previewImageUrl: String?,
+                originalApiUrl: String, originalApiImageUrl: String, originallyPublishedAt: Date,
+                title: String, createdAt: Date, publishedAt: Date?, updatedAt: Date?,
+                deletedAt: Date?, status: SpacePicStatus, source: SpacePicSource) {
         this.description = description
         this.hdImageUrl = hdImageUrl
         this.previewImageUrl = previewImageUrl
@@ -44,7 +44,9 @@ class SpacePic {
     }
 
     @Id
-    @SequenceGenerator(name = "space_pic_id_seq", sequenceName = "space_pic_id_seq", allocationSize = 1)
+    @SequenceGenerator(name = "space_pic_id_seq",
+            sequenceName = "space_pic_id_seq",
+            allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "space_pic_id_seq")
     @Column(updatable = false)
     var id: Int? = null

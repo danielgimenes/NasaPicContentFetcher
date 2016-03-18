@@ -15,8 +15,8 @@ import java.util.*
 import javax.persistence.Persistence
 
 fun main(args: Array<String>) {
+    val program = DownloadLatestPics()
     try {
-        val program = DownloadLatestPics()
         if (args.size > 0 && args[0] == "test-data")
             program.insertTestData()
         else if (args.size > 1 && args[0] == "check-interval")
@@ -29,6 +29,7 @@ fun main(args: Array<String>) {
         program.close()
     } catch(e: Exception) {
         e.printStackTrace()
+        program.close()
     } finally {
         Thread.sleep(2000)
     }
@@ -40,17 +41,21 @@ class DownloadLatestPics {
     val DATE_FORMAT = "yyyy-MM-dd"
     val APOD_BASE_URL = "https://api.nasa.gov"
     val CONFIG_FILE_NAME = "nasapiccontentfetcher.config"
-    var APOD_API_KEY : String? = null
-    var CLOUDINARY_CLOUD_NAME : String? = null
-    var CLOUDINARY_API_KEY : String? = null
-    var CLOUDINARY_API_SECRET : String? = null
-    var cloudinary : Cloudinary? = null
+    var APOD_API_KEY: String? = null
+    var CLOUDINARY_CLOUD_NAME: String? = null
+    var CLOUDINARY_API_KEY: String? = null
+    var CLOUDINARY_API_SECRET: String? = null
+    var cloudinary: Cloudinary? = null
 
-    fun downloadLatest(checkInterval : Int? = null) {
+    fun downloadLatest(checkInterval: Int? = null) {
         loadConfigurations()
         println("Fetching pictures metadata...")
         val spacePics =
-                if (checkInterval != null) downloadLatestAPODsMetadata(checkInterval) else downloadLatestAPODsMetadata()
+                if (checkInterval != null)
+                    downloadLatestAPODsMetadata(checkInterval)
+                else
+                    downloadLatestAPODsMetadata()
+
         println("SpacePics to persist = ${spacePics.size}")
         spacePics.forEach { persistNewSpacePic(it) }
         println("Persisted!")
@@ -105,7 +110,7 @@ class DownloadLatestPics {
         cloudinary = Cloudinary(config);
     }
 
-    private fun prepareSpacePicForPublishing(spacePic: SpacePic) : SpacePic? {
+    private fun prepareSpacePicForPublishing(spacePic: SpacePic): SpacePic? {
         println("preparing SpacePic ${DateTime(spacePic.originallyPublishedAt).toString(DATE_FORMAT)}...")
         spacePic.status = SpacePicStatus.PUBLISHED
         spacePic.publishedAt = DateTime().toDate()
@@ -116,10 +121,10 @@ class DownloadLatestPics {
             spacePic.hdImageUrl = uploadResult.get("url") as String
             val resizedUrl = cloudinary?.url()?.transformation(
                     Transformation().width(320).height(320).crop("fill")
-                )?.generate(uploadResult.get("public_id") as String) ?: return null
+            )?.generate(uploadResult.get("public_id") as String) ?: return null
             spacePic.previewImageUrl = resizedUrl
             return spacePic
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             return null
         }
@@ -132,8 +137,9 @@ class DownloadLatestPics {
         return toPublishQuery.resultList as List<SpacePic>
     }
 
-    // TODO refator all APOD-related logic to a different class as soon as there are other SpacePic sources
-    private fun downloadLatestAPODsMetadata(checkInterval : Int = 3): List<SpacePic> {
+    // TODO refator all APOD-related logic to a different
+    // class as soon as there are other SpacePic sources
+    private fun downloadLatestAPODsMetadata(checkInterval: Int = 3): List<SpacePic> {
         println("=== APOD ===")
         println("checkInterval = $checkInterval")
         println("Checking for already downloaded APOD pictures...")
@@ -145,8 +151,9 @@ class DownloadLatestPics {
 
     private fun downloadAPODMetadata(dayString: String): SpacePic? {
         println("Downloading APOD metadata of $dayString")
-        val apodWebService = RetrofitFactory.get(APOD_BASE_URL).create(NasaAPODWebservice::class.java)
-        val response = apodWebService.getAPOD(APOD_API_KEY, false, dayString).execute()
+        val apodWebService = RetrofitFactory.get(APOD_BASE_URL)
+                .create(NasaAPODWebservice::class.java)
+        val response = apodWebService.getAPOD(APOD_API_KEY!!, false, dayString).execute()
         if (!response.isSuccess) {
             println("url ${response.raw().request().urlString()}")
             println(response.errorBody().string())
@@ -155,8 +162,9 @@ class DownloadLatestPics {
         val apod = response.body()
         val spacePic = SpacePic(
                 originalApiUrl = response.raw().request().urlString(),
-                originalApiImageUrl = apod.url,
-                originallyPublishedAt = DateTimeFormat.forPattern(DATE_FORMAT).parseDateTime(dayString).toDate(),
+                originalApiImageUrl = apod.hdUrl ?: apod.url,
+                originallyPublishedAt = DateTimeFormat.forPattern(DATE_FORMAT)
+                        .parseDateTime(dayString).toDate(),
                 title = apod.title,
                 createdAt = DateTime().toDate(),
                 status = SpacePicStatus.CREATED,
@@ -179,8 +187,12 @@ class DownloadLatestPics {
         val startDate = DateTime().minusDays(checkInterval - 1)
                 .withHourOfDay(0).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0)
         val latestQuery = em.createQuery(
-                "FROM SpacePic WHERE source = :source AND originallyPublishedAt >= :originallyPublishedAt " +
-                        "ORDER BY originallyPublishedAt DESC")
+                """
+                FROM SpacePic
+                WHERE source = :source
+                AND originallyPublishedAt >= :originallyPublishedAt
+                ORDER BY originallyPublishedAt DESC
+                """)
         latestQuery.setParameter("source", SpacePicSource.NASA_APOD)
         latestQuery.setParameter("originallyPublishedAt", startDate.toDate())
         val latestPersistedAPODs = latestQuery.resultList as List<SpacePic>
@@ -198,7 +210,7 @@ class DownloadLatestPics {
     }
 
     // TODO refactor
-    private fun intervalToListOfDateStrings(startDate: DateTime, endDate: DateTime) : Set<String> {
+    private fun intervalToListOfDateStrings(startDate: DateTime, endDate: DateTime): Set<String> {
         var dateStrings = linkedSetOf<String>()
         var currDate = startDate
         while (currDate <= endDate) {
@@ -238,7 +250,7 @@ class DownloadLatestPics {
                 createdAt = DateTime().toDate(),
                 status = SpacePicStatus.PUBLISHED,
                 source = SpacePicSource.NASA_APOD,
-                description = "It's back.  Never before has an observed supernova been predicted. " +
+                description = "It's back. Never before has an observed supernova been predicted. " +
                         "The unique astronomical event occurred in the field of galaxy cluster MACS J1149.5+2223. " +
                         "Most bright spots in the featured image are galaxies in this cluster.  The actual " +
                         "supernova, dubbed Supernova Refsdal, occurred just once far across the universe and well " +
@@ -264,7 +276,7 @@ class DownloadLatestPics {
     }
 
     fun close() {
-        if (em.isOpen()) {
+        if (em.isOpen) {
             em.entityManagerFactory.close()
         }
     }
